@@ -7,6 +7,8 @@ from typing import Optional
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.templating import Jinja2Templates
 from langchain.vectorstores import VectorStore
+from langchain.vectorstores import Chroma
+from langchain.embeddings import OpenAIEmbeddings
 
 from callback import QuestionGenCallbackHandler, StreamingLLMCallbackHandler
 from query_data import get_chain
@@ -17,14 +19,23 @@ templates = Jinja2Templates(directory="templates")
 vectorstore: Optional[VectorStore] = None
 
 
+# @app.on_event("startup")
+# async def startup_event():
+#     logging.info("loading vectorstore")
+#     if not Path("vectorstore.pkl").exists():
+#         raise ValueError("vectorstore.pkl does not exist, please run ingest.py first")
+#     with open("vectorstore.pkl", "rb") as f:
+#         global vectorstore
+#         vectorstore = pickle.load(f)
+
 @app.on_event("startup")
 async def startup_event():
     logging.info("loading vectorstore")
-    if not Path("vectorstore.pkl").exists():
-        raise ValueError("vectorstore.pkl does not exist, please run ingest.py first")
-    with open("vectorstore.pkl", "rb") as f:
-        global vectorstore
-        vectorstore = pickle.load(f)
+    if not Path("data/whatsapp_chroma").exists():
+        raise ValueError("data/whatsapp_chroma does not exist, please run ingest_whatsapp.py first")
+    global vectorstore
+    embeddings = OpenAIEmbeddings()
+    vectorstore = Chroma(persist_directory="data/whatsapp_chroma", embedding_function=embeddings)
 
 
 @app.get("/")
