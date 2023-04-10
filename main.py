@@ -54,12 +54,17 @@ async def websocket_endpoint(websocket: WebSocket):
             start_resp = ChatResponse(sender="bot", message="", type="start")
             await websocket.send_json(start_resp.dict())
 
-            result = await qa_chain.acall(
-                {"question": question, "chat_history": chat_history}
-            )
+            result = qa_chain.__call__( {"question": question, "chat_history": chat_history})
+
+            # `acall` fails because VectorStore does not implement asimilarity_search
+            # result = await qa_chain.acall(
+            #     {"question": question, "chat_history": chat_history}
+            # )
             chat_history.append((question, result["answer"]))
 
-            end_resp = ChatResponse(sender="bot", message="", type="end")
+            bot_reply_resp = ChatResponse(sender="bot", message=result["answer"], type="stream")
+            await websocket.send_json(bot_reply_resp.dict())
+            end_resp = ChatResponse(sender="bot", message=result["answer"], type="end")
             await websocket.send_json(end_resp.dict())
         except WebSocketDisconnect:
             logging.info("websocket disconnect")
