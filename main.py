@@ -1,6 +1,5 @@
 """Main entrypoint for the app."""
 import logging
-import pickle
 from pathlib import Path
 from typing import Optional
 
